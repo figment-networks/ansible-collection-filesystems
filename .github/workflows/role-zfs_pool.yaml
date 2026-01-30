@@ -20,9 +20,9 @@ jobs:
         - 4drive-raidz
     steps:
     - name: Check out the repo
-      uses: actions/checkout@v5
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
     - name: Install ansible-core
       run: |
         python -m pip install --upgrade pip wheel
