@@ -15,7 +15,7 @@
     zpool create {{ options }} -f {{ _zfs_name }} {{ _zfs_layout }} {{ _zfs_devices | join(' ') }}
     {% endif %}
   when:
-  - not _zfs_name in ( ansible_zfs_pools | map(attribute='name') )
+  - not _zfs_name in ( ansible_facts.ansible_zfs_pools | map(attribute='name') )
   changed_when: true
 
 - name: "Set zfs configs"
@@ -29,7 +29,7 @@
 - name: "Set pool configs"
   ansible.builtin.command: "zpool set {{ pool_item.key }}={{ pool_item.value }} {{ _zfs_name }}"
   when:
-  - not ( pool_item.value | string ) in ( ansible_zfs_pools | map(attribute=pool_item.key) )
+  - not ( pool_item.value | string ) in ( ansible_facts.ansible_zfs_pools | map(attribute=pool_item.key) )
   loop: "{{ _zfs_pool_configs | dict2items }}"
   loop_control:
     loop_var: pool_item
