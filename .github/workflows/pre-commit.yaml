@@ -56,8 +56,14 @@ jobs:
         changed_files=$(git diff --name-only "$diff_base" "$diff_head" | tr '\n' ' ')
         echo "all_changed_files=${changed_files}" >> "$GITHUB_OUTPUT"
     - name: Run Check
-      # versioneer: updater=github repository=pre-commit/action max-major=3 tags=github
-      uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+      # pre-commit/action pins actions/cache@v4 (a floating tag) inside its own
+      # action.yml. GitHub resolves nested action refs too, and our org's
+      # Actions allow-list blocks that unpinned nested reference even though
+      # our own uses: lines are all SHA-pinned. figment-github-actions ships a
+      # drop-in replacement that does the same three steps (install, cache,
+      # run) but with actions/cache itself pinned to a commit SHA.
+      # versioneer: updater=github repository=figment-networks/figment-github-actions tag-prefix=pre-commit/ max-major=1 tags=github
+      uses: figment-networks/figment-github-actions/.github/actions/pre-commit@62d4980595a5b39fdc8c54cf4e445f8bca6c88a5 # pre-commit/v1.0.4
       with:
         extra_args: --files ${{ steps.changed-files.outputs.all_changed_files }}
     - name: Checks failed, notification
