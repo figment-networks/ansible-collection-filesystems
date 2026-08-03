@@ -30,7 +30,7 @@
         }}
       _format_mount_options: >-
         {{
-          format_mount_points.mount_options
+          (format_mount_points.mount_options | default('defaults'))
           if (format_mount_points is defined)
           else format_mount_options
         }}

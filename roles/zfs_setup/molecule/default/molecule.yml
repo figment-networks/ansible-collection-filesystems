@@ -9,3 +9,9 @@ driver:
 
 platforms:
 - name: instance
+
+scenario:
+  test_sequence:
+    - create
+    - converge
+    - verify
