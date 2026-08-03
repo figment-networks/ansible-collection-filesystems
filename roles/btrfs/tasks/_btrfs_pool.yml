@@ -29,7 +29,7 @@
   args:
     creates: "/dev/disk/by-uuid/{{ _btrfs_drive_data['UUID'] }}"
   register: _btrfs_create
-  notify: Re-gather btrfs drive data
+  notify: Gather btrfs drive data
 
 # The freshly-created filesystem's UUID is needed by the mount tasks right
 # below, in this same run -- flush now instead of waiting for the handler's

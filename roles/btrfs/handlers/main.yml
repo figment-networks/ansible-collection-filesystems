@@ -1,5 +1,5 @@
 ---
-- name: Re-gather btrfs drive data
+- name: Gather btrfs drive data
   block:
   - name: Get drive UUID
     ansible.builtin.command: >-
