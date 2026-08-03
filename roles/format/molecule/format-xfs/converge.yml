@@ -6,7 +6,10 @@
     loop_device_range: "{{ range(0, 2) | list }}"
   pre_tasks:
   - name: Create loop device files
-    command: "dd if=/dev/zero of=/loop-test-{{ item }}.img bs=1M count=72"
+    # xfs (community.general.filesystem / mkfs.xfs) refuses to format
+    # anything smaller than 300MB ("Filesystem must be larger than 300MB"),
+    # so the test device needs to clear that floor with headroom to spare.
+    command: "dd if=/dev/zero of=/loop-test-{{ item }}.img bs=1M count=512"
     loop: "{{ loop_device_range }}"
     tags:
     - skip_ansible_lint
