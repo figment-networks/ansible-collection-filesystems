@@ -55,17 +55,22 @@ jobs:
 
         changed_files=$(git diff --name-only "$diff_base" "$diff_head" | tr '\n' ' ')
         echo "all_changed_files=${changed_files}" >> "$GITHUB_OUTPUT"
-    - name: Run Check
-      # pre-commit/action pins actions/cache@v4 (a floating tag) inside its own
-      # action.yml. GitHub resolves nested action refs too, and our org's
-      # Actions allow-list blocks that unpinned nested reference even though
-      # our own uses: lines are all SHA-pinned. figment-github-actions ships a
-      # drop-in replacement that does the same three steps (install, cache,
-      # run) but with actions/cache itself pinned to a commit SHA.
-      # versioneer: updater=github repository=figment-networks/figment-github-actions tag-prefix=pre-commit/ max-major=1 tags=github
-      uses: figment-networks/figment-github-actions/.github/actions/pre-commit@62d4980595a5b39fdc8c54cf4e445f8bca6c88a5 # pre-commit/v1.0.4
+    - name: Install pre-commit
+      run: python -m pip install pre-commit
+    - name: Cache pre-commit environment
+      # Inlined instead of using pre-commit/action, which pins actions/cache@v4
+      # (a floating tag) inside its own action.yml. GitHub resolves nested
+      # action refs too, and our org's Actions allow-list blocks that unpinned
+      # nested reference even though our own uses: lines are all SHA-pinned.
+      # versioneer: updater=github repository=actions/cache max-major=5 tags=github
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
-        extra_args: --files ${{ steps.changed-files.outputs.all_changed_files }}
+        path: ~/.cache/pre-commit
+        key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+    - name: Run pre-commit
+      env:
+        EXTRA_ARGS: --files ${{ steps.changed-files.outputs.all_changed_files }}
+      run: pre-commit run --show-diff-on-failure --color=always $EXTRA_ARGS
     - name: Checks failed, notification
       if: failure()
       run: |
