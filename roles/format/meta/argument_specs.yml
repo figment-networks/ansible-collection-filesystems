@@ -76,6 +76,3 @@ argument_specs:
             description: "Mount options applied to every path in mount_points."
             required: false
             default: "defaults"
-    mutually_exclusive:
-      - - format_mount_point
-        - format_mount_points

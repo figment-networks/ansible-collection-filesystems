@@ -39,14 +39,14 @@
     tags:
     - skip_ansible_lint
   tasks:
-  - name: "Run role"
+  - name: "Run role for the xfs test device"
     ansible.builtin.include_role:
       name: "cloudnull.filesystems.format"
     vars:
       format_filesystem: xfs
       format_device: "{{ test_devices[0] }}"
       format_mount_point: /mnt/xfs-mount-point
-  - name: "Run role"
+  - name: "Run role for the ext4 test device"
     ansible.builtin.include_role:
       name: "cloudnull.filesystems.format"
     vars:

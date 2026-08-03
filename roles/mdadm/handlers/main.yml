@@ -1,0 +1,4 @@
+---
+- name: Update initramfs
+  ansible.builtin.command: /usr/sbin/update-initramfs -u
+  changed_when: true

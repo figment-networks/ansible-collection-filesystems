@@ -1,2 +1,7 @@
 skip_list:
 - yaml
+# Pre-existing variable names (test_devices, pe_config, zfs_arc_*, etc.) match
+# established conventions across this collection and its consumers; renaming
+# them is out of scope, so the role-prefix convention isn't enforced here.
+- var-naming[no-role-prefix]
+- galaxy[no-changelog]

@@ -12,13 +12,15 @@
   - format_mount_enabled | bool
   block:
   - name: Assert a mount point configuration was provided
+    # format_mount_point/format_mount_points mutual exclusivity is enforced
     ansible.builtin.assert:
       quiet: true
       that:
       - (format_mount_point is defined) or (format_mount_points is defined)
+      - not ((format_mount_point is defined) and (format_mount_points is defined))
       fail_msg: >-
-        Either format_mount_point or format_mount_points must be set when
-        format_mount_enabled is true.
+        Exactly one of format_mount_point or format_mount_points must be set
+        when format_mount_enabled is true (they are mutually exclusive).
 
   - name: Normalize desired mount points for this device
     ansible.builtin.set_fact:

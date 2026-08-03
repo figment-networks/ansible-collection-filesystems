@@ -4,6 +4,6 @@
   hosts: all
   pre_tasks:
   - name: Install packages
-    package:
+    ansible.builtin.package:
       name: lvm2
       state: present

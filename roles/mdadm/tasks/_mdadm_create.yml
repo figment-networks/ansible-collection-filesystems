@@ -37,10 +37,6 @@
     args:
       creates: "/dev/{{ outer_item.key }}"
     register: "array_created"
+    notify: Update initramfs
     tags:
     - skip_ansible_lint
-  - name: Set update initramfs fact
-    ansible.builtin.set_fact:
-      _mdadm_update_initramfs: true
-    when:
-    - array_created is changed

@@ -55,6 +55,17 @@ jobs:
 
         changed_files=$(git diff --name-only "$diff_base" "$diff_head" | tr '\n' ' ')
         echo "all_changed_files=${changed_files}" >> "$GITHUB_OUTPUT"
+    - name: Install current collection
+      # ansible-lint's syntax-check needs cloudnull.filesystems.* (used by the
+      # example playbooks under playbooks/) to resolve as an installed
+      # collection, not just a checked-out directory. Installing it to the
+      # default user collections path (~/.ansible/collections) makes it
+      # visible to ansible-lint's own isolated pre-commit hook environment,
+      # which also searches that path.
+      run: |
+        python -m pip install --upgrade pip wheel
+        python -m pip install --upgrade ansible-core
+        ansible-galaxy collection install . --upgrade
     - name: Install pre-commit
       run: python -m pip install pre-commit
     - name: Cache pre-commit environment
