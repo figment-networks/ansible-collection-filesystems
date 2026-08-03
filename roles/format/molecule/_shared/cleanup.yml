@@ -20,8 +20,11 @@
     ansible.posix.mount:
       path: "{{ item }}"
       state: unmounted
+    failed_when: false
     loop:
     - /mnt/xfs-mount-point
+    - /mnt/xfs-mount-point-a
+    - /mnt/xfs-mount-point-b
     - /mnt/ext4-mount-point
   - name: Destroy loop device
     ansible.builtin.command: "losetup -d {{ item }}"
@@ -29,3 +32,7 @@
     loop: "{{ test_devices }}"
     tags:
     - skip_ansible_lint
+  - name: Remove pre-role fstab snapshot
+    ansible.builtin.file:
+      path: /tmp/molecule-format-fstab.pre
+      state: absent

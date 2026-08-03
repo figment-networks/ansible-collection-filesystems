@@ -21,3 +21,80 @@
     loop: "{{ test_devices }}"
     tags:
     - skip_ansible_lint
+
+  - name: Gather current fstab entries for the xfs test device
+    ansible.builtin.mount_facts:
+      sources:
+      - /etc/fstab
+      devices:
+      - "{{ test_devices[0] }}"
+    register: _xfs_fstab
+
+  - name: Assert the stale single mount point was removed
+    ansible.builtin.assert:
+      quiet: true
+      that:
+      - "'/mnt/xfs-mount-point' not in _xfs_fstab.ansible_facts.mount_points"
+      fail_msg: >-
+        /mnt/xfs-mount-point is still in /etc/fstab for the xfs test
+        device after its mount point configuration changed - stale fstab
+        cleanup did not run correctly.
+
+  - name: Assert both new mount points are present in fstab
+    ansible.builtin.assert:
+      quiet: true
+      that:
+      - "'/mnt/xfs-mount-point-a' in _xfs_fstab.ansible_facts.mount_points"
+      - "'/mnt/xfs-mount-point-b' in _xfs_fstab.ansible_facts.mount_points"
+      fail_msg: "Expected fstab entries for both declared xfs mount points."
+
+  - name: Assert only the declared paths remain for the xfs test device
+    ansible.builtin.assert:
+      quiet: true
+      that:
+      - (_xfs_fstab.ansible_facts.mount_points.keys() | list | sort) ==
+        (['/mnt/xfs-mount-point-a', '/mnt/xfs-mount-point-b'] | sort)
+      fail_msg: >-
+        /etc/fstab has entries for the xfs test device that are not one of
+        the currently declared mount points: {{ _xfs_fstab.ansible_facts.mount_points.keys() | list }}
+
+  - name: Check both new mount points are actually mounted
+    ansible.builtin.shell: findmnt {{ item }}
+    loop:
+    - /mnt/xfs-mount-point-a
+    - /mnt/xfs-mount-point-b
+    changed_when: false
+    tags:
+    - skip_ansible_lint
+
+  - name: Compute non-test fstab lines from the pre-role snapshot
+    ansible.builtin.shell: >-
+      set -e -o pipefail
+      grep -v -E '(loop-test|xfs-mount-point|ext4-mount-point)' /tmp/molecule-format-fstab.pre | sort
+    args:
+      executable: /usr/bin/bash
+    register: _pre_lines
+    changed_when: false
+    tags:
+    - skip_ansible_lint
+
+  - name: Compute non-test fstab lines from the current fstab
+    ansible.builtin.shell: >-
+      set -e -o pipefail
+      grep -v -E '(loop-test|xfs-mount-point|ext4-mount-point)' /etc/fstab | sort
+    args:
+      executable: /usr/bin/bash
+    register: _post_lines
+    changed_when: false
+    tags:
+    - skip_ansible_lint
+
+  - name: Assert unrelated fstab entries (e.g. root) were never touched
+    ansible.builtin.assert:
+      quiet: true
+      that:
+      - _pre_lines.stdout == _post_lines.stdout
+      fail_msg: >-
+        Unrelated /etc/fstab entries changed while the format role was
+        pruning stale entries for the test devices - the cleanup logic is
+        not scoped tightly enough to format_device.

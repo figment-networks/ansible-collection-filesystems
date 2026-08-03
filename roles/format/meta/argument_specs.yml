@@ -44,10 +44,38 @@ argument_specs:
         - false
       format_mount_point:
         type: "str"
-        description: "Mount point for a given block device."
+        description: >
+          Single mount point for a given block device. Mutually exclusive with
+          format_mount_points. Kept for backward compatibility; use
+          format_mount_points to mount the same device at more than one path.
         required: false
       format_mount_options:
         type: "str"
-        description: "Specific filesystem options used when mounting a block device."
+        description: >
+          Specific filesystem options used when mounting a block device via
+          format_mount_point. Ignored when format_mount_points is used.
         required: false
         default: "defaults"
+      format_mount_points:
+        type: "dict"
+        description: >
+          Mount the device at one or more paths. Mutually exclusive with
+          format_mount_point/format_mount_options. Any pre-existing fstab
+          entry for format_device whose path is not listed in mount_points
+          is treated as stale and removed (unmounted and dropped from
+          fstab) before the declared paths are mounted.
+        required: false
+        options:
+          mount_points:
+            type: "list"
+            elements: "str"
+            description: "One or more mount point paths for format_device."
+            required: true
+          mount_options:
+            type: "str"
+            description: "Mount options applied to every path in mount_points."
+            required: false
+            default: "defaults"
+    mutually_exclusive:
+      - - format_mount_point
+        - format_mount_points
