@@ -12,16 +12,52 @@ jobs:
         - "3.12"
     steps:
     - name: Check out the repo
-      uses: actions/checkout@v5 
+      # versioneer: updater=github repository=actions/checkout max-major=7 tags=github
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+        fetch-depth: 0
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      # versioneer: updater=github repository=actions/setup-python max-major=7 tags=github
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: ${{ matrix.python-version }}
     - name: Get changed files
       id: changed-files
-      uses: tj-actions/changed-files@531f5f7d163941f0c1c04e0ff4d8bb243ac4366f
+      # Home-grown replacement for tj-actions/changed-files: that action tries to
+      # `git fetch` the PR branch mid-run when the checkout's history is too
+      # shallow, which needs the checkout's persisted credential -- disabling
+      # persist-credentials above (zizmor: credential-persistence) broke it
+      # outright. fetch-depth: 0 means every commit this step needs is already
+      # local, so this only ever runs a local `git diff` -- no network, no
+      # credential, no third-party action.
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        PUSH_BEFORE_SHA: ${{ github.event.before }}
+        PUSH_HEAD_SHA: ${{ github.sha }}
+      run: |
+        if [ "$EVENT_NAME" = "pull_request" ]; then
+          diff_base="$PR_BASE_SHA"
+          diff_head="$PR_HEAD_SHA"
+        else
+          diff_base="$PUSH_BEFORE_SHA"
+          diff_head="$PUSH_HEAD_SHA"
+        fi
+
+        # PUSH_BEFORE_SHA is the all-zero SHA on a branch's first push (nothing to
+        # diff against) -- fall back to the empty tree so every tracked file
+        # counts as "changed" rather than erroring.
+        if [ -z "$diff_base" ] || [ "$diff_base" = "0000000000000000000000000000000000000000" ]; then
+          diff_base=$(git hash-object -t tree /dev/null)
+        fi
+
+        changed_files=$(git diff --name-only "$diff_base" "$diff_head" | tr '\n' ' ')
+        echo "all_changed_files=${changed_files}" >> "$GITHUB_OUTPUT"
     - name: Run Check
-      uses: pre-commit/action@v3.0.1
+      # versioneer: updater=github repository=pre-commit/action max-major=3 tags=github
+      uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
       with:
         extra_args: --files ${{ steps.changed-files.outputs.all_changed_files }}
     - name: Checks failed, notification
@@ -32,7 +68,8 @@ jobs:
         echo "pre-commit run --files ${{ steps.changed-files.outputs.all_changed_files }}"
     - name: Upload log artifacts on failure
       if: failure()
-      uses: actions/upload-artifact@v4
+      # versioneer: updater=github repository=actions/upload-artifact max-major=7 tags=github
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: pre-commit-py${{ matrix.python-version }}
         path: /home/runner/.cache/pre-commit/pre-commit.log
