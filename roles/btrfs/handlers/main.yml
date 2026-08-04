@@ -1,14 +1,15 @@
 ---
-- name: Gather btrfs drive data
-  block:
-  - name: Get drive UUID
-    ansible.builtin.command: >-
-      blkid --output export "{{ _btrfs_drives[0] }}"
-    register: _btrfs_blkid_output
-    changed_when: false
-  - name: Convert to dict list
-    ansible.builtin.set_fact:
-      _btrfs_drive_data: "{{ _btrfs_drive_data | default({}) | combine({_btrfs_env_item.split('=')[0]: _btrfs_env_item.split('=')[1]}) }}"
-    loop: "{{ _btrfs_blkid_output.stdout_lines }}"
-    loop_control:
-      loop_var: _btrfs_env_item
+- name: Get drive UUID
+  ansible.builtin.command: >-
+    blkid --output export "{{ _btrfs_drives[0] }}"
+  register: _btrfs_blkid_output
+  changed_when: false
+  listen: "Gather btrfs drive data"
+
+- name: Convert to dict list
+  ansible.builtin.set_fact:
+    _btrfs_drive_data: "{{ _btrfs_drive_data | default({}) | combine({_btrfs_env_item.split('=')[0]: _btrfs_env_item.split('=')[1]}) }}"
+  loop: "{{ _btrfs_blkid_output.stdout_lines }}"
+  loop_control:
+    loop_var: _btrfs_env_item
+  listen: "Gather btrfs drive data"
