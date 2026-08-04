@@ -31,11 +31,22 @@
   register: _btrfs_create
   notify: Gather btrfs drive data
 
-# The freshly-created filesystem's UUID is needed by the mount tasks right
-# below, in this same run -- flush now instead of waiting for the handler's
-# normal end-of-play slot.
-- name: Flush handlers so drive data is available immediately
-  ansible.builtin.meta: flush_handlers
+- name: Re-gather drive data
+  when:
+  # This has to be done within the task as we need the same variable scope not available in a handler
+  - _btrfs_create is changed # noqa: no-handler
+  block:
+  - name: Get drive UUID
+    ansible.builtin.command: >-
+      blkid --output export "{{ _btrfs_drives[0] }}"
+    register: _btrfs_blkid_output
+    changed_when: false
+  - name: "Convert to dict list"
+    ansible.builtin.set_fact:
+      _btrfs_drive_data: "{{ _btrfs_drive_data | default({}) | combine({_btrfs_env_item.split('=')[0]: _btrfs_env_item.split('=')[1]}) }}"
+    loop: "{{ _btrfs_blkid_output.stdout_lines }}"
+    loop_control:
+      loop_var: _btrfs_env_item
 
 - name: Create mountpoint
   ansible.builtin.file:
