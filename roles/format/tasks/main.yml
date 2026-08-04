@@ -11,16 +11,82 @@
   when:
   - format_mount_enabled | bool
   block:
-  - name: Create mountpoint
+  - name: Assert a mount point configuration was provided
+    # format_mount_point/format_mount_points mutual exclusivity is enforced
+    ansible.builtin.assert:
+      quiet: true
+      that:
+      - (format_mount_point is defined) or (format_mount_points is defined)
+      - not ((format_mount_point is defined) and (format_mount_points is defined))
+      fail_msg: >-
+        Exactly one of format_mount_point or format_mount_points must be set
+        when format_mount_enabled is true (they are mutually exclusive).
+
+  - name: Normalize desired mount points for this device
+    ansible.builtin.set_fact:
+      _format_mount_points: >-
+        {{
+          format_mount_points.mount_points
+          if (format_mount_points is defined)
+          else [format_mount_point]
+        }}
+      _format_mount_options: >-
+        {{
+          (format_mount_points.mount_options | default('defaults'))
+          if (format_mount_points is defined)
+          else format_mount_options
+        }}
+
+  # ansible.posix.mount keys fstab entries by path, not device, so it has no
+  # concept of "this device used to be mounted somewhere else". Look up any
+  # fstab entry that currently references format_device and prune whatever
+  # isn't in the desired path list below, before mounting the desired paths.
+  # Scoping the lookup to format_device means entries for every other
+  # device (including root) are never even considered.
+  - name: Gather existing fstab entries for this device
+    ansible.builtin.mount_facts:
+      sources:
+      - /etc/fstab
+      devices:
+      - "{{ format_device }}"
+    register: _format_existing_fstab
+
+  - name: Identify stale fstab entries for this device
+    ansible.builtin.set_fact:
+      _format_stale_mount_points: >-
+        {{
+          _format_existing_fstab.ansible_facts.mount_points
+          | default({})
+          | dict2items
+          | rejectattr('key', 'in', _format_mount_points)
+          | map(attribute='key')
+          | list
+        }}
+
+  - name: Remove stale fstab entries for this device
+    ansible.posix.mount:
+      path: "{{ item }}"
+      state: absent
+    loop: "{{ _format_stale_mount_points }}"
+    loop_control:
+      label: "{{ item }}"
+
+  - name: Create mountpoints
     ansible.builtin.file:
-      path: "{{ format_mount_point }}"
+      path: "{{ item }}"
       state: directory
       mode: "0755"
+    loop: "{{ _format_mount_points }}"
+    loop_control:
+      label: "{{ item }}"
 
   - name: Mount the filesystem
     ansible.posix.mount:
-      path: "{{ format_mount_point }}"
+      path: "{{ item }}"
       src: "{{ format_device }}"
       fstype: "{{ format_filesystem }}"
-      opts: "{{ format_mount_options }}"
+      opts: "{{ _format_mount_options }}"
       state: mounted
+    loop: "{{ _format_mount_points }}"
+    loop_control:
+      label: "{{ item }}"

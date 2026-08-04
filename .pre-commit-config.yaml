@@ -1,12 +1,12 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v6.0.0
     hooks:
     - id: end-of-file-fixer
     - id: trailing-whitespace
     - id: mixed-line-ending
-    - id: check-byte-order-marker
+    - id: fix-byte-order-marker
     - id: check-executables-have-shebangs
     - id: check-merge-conflict
     - id: check-symlinks
@@ -21,13 +21,23 @@ repos:
     hooks:
     - id: black
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v5.3.2
+    rev: v26.4.0
     hooks:
-    - id: ansible-lint
-      additional_dependencies:
-      - ansible-core
-      - yamllint
+      - id: ansible-lint
+        # Override the hook's pinned language_version (python3.14 in v26.4.0) so the
+        # env builds with each CI job's matrix Python (3.12/3.13/3.14) instead of
+        # requiring 3.14 to be present on every runner.
+        language_version: default
+        always_run: false
+        exclude_types:
+          - markdown
+          - shell
+        args:
+          - --offline
+        additional_dependencies:
+          - ansible
+          - yamllint
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
-    rev: 2.1.6
+    rev: 3.0.0
     hooks:
-    - id: shellcheck
+      - id: shellcheck

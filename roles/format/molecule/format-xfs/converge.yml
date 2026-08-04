@@ -6,7 +6,10 @@
     loop_device_range: "{{ range(0, 2) | list }}"
   pre_tasks:
   - name: Create loop device files
-    command: "dd if=/dev/zero of=/loop-test-{{ item }}.img bs=1M count=72"
+    # xfs (community.general.filesystem / mkfs.xfs) refuses to format
+    # anything smaller than 300MB ("Filesystem must be larger than 300MB"),
+    # so the test device needs to clear that floor with headroom to spare.
+    command: "dd if=/dev/zero of=/loop-test-{{ item }}.img bs=1M count=512"
     loop: "{{ loop_device_range }}"
     tags:
     - skip_ansible_lint
@@ -27,18 +30,36 @@
   - name: Set test_device facts
     ansible.builtin.set_fact:
       test_devices: "{{ _test_devices.stdout_lines }}"
+  - name: Snapshot /etc/fstab before the role runs
+    ansible.builtin.copy:
+      src: /etc/fstab
+      dest: /tmp/molecule-format-fstab.pre
+      remote_src: true
+      mode: "0644"
+    tags:
+    - skip_ansible_lint
   tasks:
-  - name: "Run role"
+  - name: "Run role for the xfs test device"
     ansible.builtin.include_role:
       name: "cloudnull.filesystems.format"
     vars:
       format_filesystem: xfs
       format_device: "{{ test_devices[0] }}"
       format_mount_point: /mnt/xfs-mount-point
-  - name: "Run role"
+  - name: "Run role for the ext4 test device"
     ansible.builtin.include_role:
       name: "cloudnull.filesystems.format"
     vars:
       format_filesystem: ext4
       format_device: "{{ test_devices[1] }}"
       format_mount_point: /mnt/ext4-mount-point
+  - name: "Run role again with the xfs device's mount point changed"
+    ansible.builtin.include_role:
+      name: "cloudnull.filesystems.format"
+    vars:
+      format_filesystem: xfs
+      format_device: "{{ test_devices[0] }}"
+      format_mount_points:
+        mount_points:
+        - /mnt/xfs-mount-point-a
+        - /mnt/xfs-mount-point-b

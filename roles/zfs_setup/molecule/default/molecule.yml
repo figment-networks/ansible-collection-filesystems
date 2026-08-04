@@ -1,7 +1,7 @@
 ---
 
 driver:
-  name: delegated
+  name: default
   options:
     managed: false
     ansible_connection_options:
@@ -9,3 +9,9 @@ driver:
 
 platforms:
 - name: instance
+
+scenario:
+  test_sequence:
+    - create
+    - converge
+    - verify

@@ -15,7 +15,8 @@
     zpool create {{ options }} -f {{ _zfs_name }} {{ _zfs_layout }} {{ _zfs_devices | join(' ') }}
     {% endif %}
   when:
-  - not _zfs_name in ( ansible_zfs_pools | map(attribute='name') )
+  - not _zfs_name in ( ansible_zfs_pools | default([]) | map(attribute='name') )
+  changed_when: true
 
 - name: "Set zfs configs"
   ansible.builtin.command: "zfs set {{ pool_item.key }}={{ pool_item.value }} {{ _zfs_name }}"
@@ -28,7 +29,7 @@
 - name: "Set pool configs"
   ansible.builtin.command: "zpool set {{ pool_item.key }}={{ pool_item.value }} {{ _zfs_name }}"
   when:
-  - not ( pool_item.value | string ) in ( ansible_zfs_pools | map(attribute=pool_item.key) )
+  - not ( pool_item.value | string ) in ( ansible_zfs_pools | default([]) | map(attribute=pool_item.key) )
   loop: "{{ _zfs_pool_configs | dict2items }}"
   loop_control:
     loop_var: pool_item
@@ -51,6 +52,7 @@
     ansible.builtin.command: "zpool add -f {{ _zfs_name }} cache {{ (_zfs_cache | length > 1) | ternary('mirror', '') }} {{ _zfs_cache | join(' ') }}"
     when:
     - _zpool_cache.rc != 0
+    changed_when: true
 
 - name: Log block
   when:
@@ -68,6 +70,7 @@
     ansible.builtin.command: "zpool add -f {{ _zfs_name }} log {{ (_zfs_log | length > 1) | ternary('mirror', '') }} {{ _zfs_log | join(' ') }}"
     when:
     - _zpool_log.rc != 0
+    changed_when: true
 
 - name: Create filesystem
   community.general.zfs:

@@ -2,6 +2,7 @@
 - name: Regenerate the initramfs
   ansible.builtin.command: update-initramfs -u
   become: true
+  changed_when: true
   listen: initramfs reload
 
 - name: Reboot

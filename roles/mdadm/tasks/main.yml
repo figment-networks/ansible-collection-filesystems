@@ -1,5 +1,5 @@
 ---
-- name: mdadm arrays setup
+- name: Mdadm arrays setup
   become: true
   block:
   - name: Ensure mdadm is installed
@@ -29,8 +29,3 @@
     loop: '{{ array_details.stdout_lines }}'
     loop_control:
       loop_var: _mdadm_item
-
-  - name: Updating initramfs
-    ansible.builtin.command: "/usr/sbin/update-initramfs -u"
-    when:
-    - _mdadm_update_initramfs | bool

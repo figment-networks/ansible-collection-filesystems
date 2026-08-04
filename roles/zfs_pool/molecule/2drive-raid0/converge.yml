@@ -43,8 +43,8 @@
               mountpoint: "/mnt/dir1"
           pool_options:
             ashift: 12
-          pool_configs:
+          fs_configs:
             atime: "off"
             compression: "lz4"
-          fs_configs:
+          pool_configs:
             autoexpand: "on"

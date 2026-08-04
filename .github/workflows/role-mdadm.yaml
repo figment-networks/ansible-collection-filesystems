@@ -18,9 +18,11 @@ jobs:
         - 4drive-raid10
     steps:
     - name: Check out the repo
-      uses: actions/checkout@v5
+      # versioneer: updater=github repository=actions/checkout max-major=7 tags=github
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up Python
-      uses: actions/setup-python@v6
+      # versioneer: updater=github repository=actions/setup-python max-major=7 tags=github
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
     - name: Install ansible-core
       run: |
         python -m pip install --upgrade pip wheel

@@ -29,7 +29,7 @@
       paths:
         - "{{ role_path }}/tasks"
 
-- name: ubuntu | configuring ZFS
+- name: Ubuntu | configuring ZFS
   ansible.builtin.template:
     src: zfs.j2
     dest: /etc/default/zfs
