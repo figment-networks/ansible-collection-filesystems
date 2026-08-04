@@ -29,7 +29,6 @@
   args:
     creates: "/dev/disk/by-uuid/{{ _btrfs_drive_data['UUID'] }}"
   register: _btrfs_create
-  notify: Gather btrfs drive data
 
 - name: Re-gather drive data
   when:
